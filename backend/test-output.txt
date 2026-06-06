@@ -1,0 +1,5 @@
+Starting test server on port 3099
+Server ready, running tests...
+
+--- Test Results ---
+
