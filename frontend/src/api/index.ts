@@ -16,4 +16,13 @@ api.interceptors.response.use(
   }
 );
 
+export const getAbnormalDashboard = (params?: {
+  start_date?: string;
+  end_date?: string;
+  client_name?: string;
+  abnormal_type?: string;
+}) => {
+  return api.get('/query/abnormal-dashboard', { params });
+};
+
 export default api;

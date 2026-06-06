@@ -9,11 +9,22 @@ const routes = require('./routes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+let databaseReady = false;
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/health', (req, res) => {
+  if (!databaseReady) {
+    return res.status(503).json({ 
+      status: 'unhealthy', 
+      database: 'not_ready', 
+      message: 'Database initialization in progress',
+      timestamp: new Date().toISOString() 
+    });
+  }
+  
   db.get('SELECT 1 as ok')
     .then(() => {
       res.json({ status: 'healthy', database: 'connected', timestamp: new Date().toISOString() });
@@ -31,8 +42,13 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  db.initDatabase();
-  console.log(`LIMS Backend running on port ${PORT}`);
+  console.log(`LIMS Backend starting on port ${PORT}, initializing database...`);
+  
+  setTimeout(() => {
+    db.initDatabase();
+    databaseReady = true;
+    console.log(`LIMS Backend running on port ${PORT}, database ready`);
+  }, 3000);
 });
 
 module.exports = app;

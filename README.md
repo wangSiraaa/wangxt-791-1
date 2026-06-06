@@ -11,6 +11,7 @@
 - **分派台**: 检测任务分派，支持单条/批量分派
 - **报告审核**: 报告草稿、提交审核、审核退回/通过、版本管理
 - **状态查询**: 委托单进度跟踪、状态历史、对外查询控制
+- **异常看板**: 按筛选条件查看异常样品、异常检测项目、异常收样统计，支持日期范围和客户名称筛选
 
 ### 后端 API
 - 委托单管理 (CRUD + 状态流转)
@@ -19,6 +20,7 @@
 - 任务分派 (分派规则校验)
 - 报告管理 (草稿、审核、版本)
 - 状态查询 (对外查询控制)
+- 异常看板接口: `/api/query/abnormal-dashboard` - 返回异常统计数据和详细列表
 
 ## 业务规则
 
@@ -40,7 +42,9 @@
 
 ## 快速启动
 
-### 方式一: Docker Compose (推荐)
+### 启动命令
+
+#### 方式一: Docker Compose (推荐)
 
 ```bash
 docker-compose up -d
@@ -50,6 +54,7 @@ docker-compose up -d
 - 前端: http://localhost:8080
 - 后端API: http://localhost:3001
 - 健康检查: http://localhost:3001/health
+- 异常看板: http://localhost:8080/abnormal
 
 查看容器状态:
 ```bash
@@ -61,7 +66,7 @@ docker-compose ps
 docker-compose logs -f
 ```
 
-### 方式二: 本地开发启动
+#### 方式二: 本地开发启动
 
 ```bash
 chmod +x start.sh
@@ -90,6 +95,46 @@ npm run dev
 访问:
 - 前端: http://localhost:3000
 - 后端: http://localhost:3001
+- 异常看板: http://localhost:3000/abnormal
+
+### 失败用例: 健康检查需等待数据库准备
+
+**场景**: 后端服务启动后立即调用健康检查接口
+
+**步骤**:
+```bash
+# 1. 启动后端服务
+cd backend && npm start &
+
+# 2. 立即（1秒内）调用健康检查（会失败，数据库还未初始化）
+sleep 1 && curl -v http://localhost:3001/health
+```
+
+**预期失败结果**:
+- HTTP 状态码: `503 Service Unavailable`
+- 响应体:
+```json
+{
+  "status": "unhealthy",
+  "database": "not_ready",
+  "message": "Database initialization in progress",
+  "timestamp": "..."
+}
+```
+
+**成功结果**（等待3秒后）:
+```bash
+sleep 3 && curl http://localhost:3001/health
+```
+- HTTP 状态码: `200 OK`
+- 响应体:
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "timestamp": "..."
+}
+```
 
 ## 验收测试
 

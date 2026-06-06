@@ -6,7 +6,8 @@ import {
   CheckSquareOutlined,
   UserSwitchOutlined,
   FileSearchOutlined,
-  SearchOutlined
+  SearchOutlined,
+  WarningOutlined
 } from '@ant-design/icons';
 import CommissionDetail from './pages/CommissionDetail';
 import SampleReceive from './pages/SampleReceive';
@@ -14,6 +15,7 @@ import ItemConfirm from './pages/ItemConfirm';
 import AssignmentDesk from './pages/AssignmentDesk';
 import ReportReview from './pages/ReportReview';
 import StatusQuery from './pages/StatusQuery';
+import AbnormalDashboard from './pages/AbnormalDashboard';
 
 const { Header, Sider, Content } = Layout;
 
@@ -23,7 +25,8 @@ const menuItems = [
   { key: '/confirm', icon: <CheckSquareOutlined />, label: <Link to="/confirm">项目确认</Link> },
   { key: '/assign', icon: <UserSwitchOutlined />, label: <Link to="/assign">分派台</Link> },
   { key: '/review', icon: <FileSearchOutlined />, label: <Link to="/review">报告审核</Link> },
-  { key: '/query', icon: <SearchOutlined />, label: <Link to="/query">状态查询</Link> }
+  { key: '/query', icon: <SearchOutlined />, label: <Link to="/query">状态查询</Link> },
+  { key: '/abnormal', icon: <WarningOutlined />, label: <Link to="/abnormal">异常看板</Link> }
 ];
 
 function App() {
@@ -52,6 +55,7 @@ function App() {
             <Route path="/assign" element={<AssignmentDesk />} />
             <Route path="/review" element={<ReportReview />} />
             <Route path="/query" element={<StatusQuery />} />
+            <Route path="/abnormal" element={<AbnormalDashboard />} />
           </Routes>
         </Content>
       </Layout>

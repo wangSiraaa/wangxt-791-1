@@ -107,4 +107,108 @@ router.get('/history/:entityType/:entityId', async (req, res) => {
   }
 });
 
+router.get('/abnormal-dashboard', async (req, res) => {
+  try {
+    const { start_date, end_date, client_name, abnormal_type } = req.query;
+    
+    let whereClauses = ['sv.status = ?'];
+    let params = ['ABNORMAL'];
+    
+    if (start_date) {
+      whereClauses.push('co.commission_date >= ?');
+      params.push(start_date);
+    }
+    if (end_date) {
+      whereClauses.push('co.commission_date <= ?');
+      params.push(end_date);
+    }
+    if (client_name) {
+      whereClauses.push('co.client_name LIKE ?');
+      params.push(`%${client_name}%`);
+    }
+    
+    const whereSql = whereClauses.join(' AND ');
+    
+    const abnormalSamples = await db.all(
+      `SELECT 
+        sv.id,
+        sv.vial_no,
+        sv.vial_barcode,
+        sv.sample_name,
+        sv.sample_type,
+        sv.abnormal_reason,
+        sv.status,
+        sv.created_at as sample_created_at,
+        co.id as order_id,
+        co.order_no,
+        co.client_name,
+        co.client_contact,
+        co.client_phone,
+        co.commission_date,
+        co.status as order_status,
+        sr.id as receipt_id,
+        sr.receipt_no,
+        sr.receiver_name,
+        sr.receipt_time,
+        sr.condition_check_passed,
+        sr.condition_remark,
+        sr.abnormal_reason as receipt_abnormal_reason
+      FROM sample_vials sv
+      LEFT JOIN commission_orders co ON sv.order_id = co.id
+      LEFT JOIN sample_receipts sr ON sv.id = sr.vial_id
+      WHERE ${whereSql}
+      ORDER BY sv.created_at DESC`,
+      params
+    );
+    
+    const abnormalTestItems = await db.all(
+      `SELECT 
+        ti.id,
+        ti.item_code,
+        ti.item_name,
+        ti.test_standard,
+        ti.status as item_status,
+        ti.result_value,
+        ti.remark as item_remark,
+        sv.id as vial_id,
+        sv.vial_no,
+        sv.sample_name,
+        co.id as order_id,
+        co.order_no,
+        co.client_name
+      FROM test_items ti
+      LEFT JOIN sample_vials sv ON ti.vial_id = sv.id
+      LEFT JOIN commission_orders co ON sv.order_id = co.id
+      WHERE ti.status = 'ABNORMAL'
+      ORDER BY ti.created_at DESC`
+    );
+    
+    const stats = await db.get(
+      `SELECT 
+        COUNT(DISTINCT CASE WHEN sv.status = 'ABNORMAL' THEN sv.id END) as abnormal_sample_count,
+        COUNT(DISTINCT CASE WHEN ti.status = 'ABNORMAL' THEN ti.id END) as abnormal_item_count,
+        COUNT(DISTINCT CASE WHEN sr.is_abnormal = 1 THEN sr.id END) as abnormal_receipt_count,
+        COUNT(DISTINCT co.id) as affected_order_count
+      FROM sample_vials sv
+      LEFT JOIN commission_orders co ON sv.order_id = co.id
+      LEFT JOIN sample_receipts sr ON sv.id = sr.vial_id
+      LEFT JOIN test_items ti ON sv.id = ti.vial_id
+      WHERE sv.status = 'ABNORMAL' OR ti.status = 'ABNORMAL' OR sr.is_abnormal = 1`
+    );
+    
+    res.json({
+      stats: {
+        abnormal_sample_count: stats?.abnormal_sample_count || 0,
+        abnormal_item_count: stats?.abnormal_item_count || 0,
+        abnormal_receipt_count: stats?.abnormal_receipt_count || 0,
+        affected_order_count: stats?.affected_order_count || 0
+      },
+      abnormal_samples: abnormalSamples,
+      abnormal_test_items: abnormalTestItems
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
