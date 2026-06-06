@@ -4,13 +4,13 @@ const path = require('path');
 const fs = require('fs');
 
 const PORT = 3099;
-const serverFile = path.join(__dirname, 'test-server.js');
+const serverFile = path.join(__dirname, '.test-server.generated.js');
 
 const serverCode = `
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const db = require('../src/database');
+const database = require('../src/database');
 const routes = require('../src/routes');
 
 const app = express();
@@ -18,16 +18,17 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.get('/health', (req, res) => {
-  db.get('SELECT 1 as ok', (err, row) => {
-    if (err) return res.status(503).json({ status: 'unhealthy' });
-    res.json({ status: 'healthy', database: 'ok' });
-  });
+  database.get('SELECT 1 as ok')
+    .then(() => res.json({ status: 'healthy', database: 'ok' }))
+    .catch((err) => {
+      res.status(503).json({ status: 'unhealthy', error: err.message });
+    });
 });
 
 app.use('/api', routes);
 
 app.listen(${PORT}, () => {
-  db.initDatabase();
+  database.initDatabase();
   console.log('TEST_SERVER_READY');
 });
 `;
@@ -84,6 +85,10 @@ function request(method, path, data = null) {
       });
     });
     req.on('error', (e) => resolve({ error: e.message }));
+    req.setTimeout(5000, () => {
+      req.destroy();
+      resolve({ error: 'request timeout' });
+    });
     if (data) req.write(JSON.stringify(data));
     req.end();
   });

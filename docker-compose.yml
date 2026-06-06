@@ -3,9 +3,9 @@ version: '3.8'
 services:
   backend:
     build: ./backend
-    container_name: lims-backend
+    container_name: wangxt-791-lims-backend
     ports:
-      - "3001:3001"
+      - "17910:3001"
     environment:
       - NODE_ENV=production
       - DB_PATH=./data/lims.db
@@ -21,9 +21,9 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: lims-frontend
+    container_name: wangxt-791-lims-frontend
     ports:
-      - "8080:80"
+      - "17911:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -37,4 +37,4 @@ services:
 
 volumes:
   lims-data:
-    name: lims-data
+    name: wangxt-791-lims-data

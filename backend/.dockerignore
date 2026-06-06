@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+yarn-error.log
+data
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.local
+tests/test-output.txt
+start-server.js
+test-server.js
+.DS_Store
+.git
+.gitignore
+README.md

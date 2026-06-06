@@ -14,12 +14,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/health', (req, res) => {
-  db.get('SELECT 1 as ok', (err, row) => {
-    if (err) {
-      return res.status(503).json({ status: 'unhealthy', database: 'error', error: err.message });
-    }
-    res.json({ status: 'healthy', database: 'connected', timestamp: new Date().toISOString() });
-  });
+  db.get('SELECT 1 as ok')
+    .then(() => {
+      res.json({ status: 'healthy', database: 'connected', timestamp: new Date().toISOString() });
+    })
+    .catch((err) => {
+      res.status(503).json({ status: 'unhealthy', database: 'error', error: err.message });
+    });
 });
 
 app.use('/api', routes);
@@ -30,8 +31,8 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`LIMS Backend running on port ${PORT}`);
   db.initDatabase();
+  console.log(`LIMS Backend running on port ${PORT}`);
 });
 
 module.exports = app;
